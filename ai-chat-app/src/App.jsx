@@ -80,14 +80,30 @@ function App() {
     setIsLoading(true)
 
     try {
-      const response = await geminiService.sendMessage(inputValue)
-      const aiMessage = {
-        id: Date.now() + 1,
-        content: response,
-        type: 'ai',
-        timestamp: new Date().toLocaleTimeString()
+      console.log('Calling geminiService.sendMessage with:', inputValue);
+      const result = await geminiService.sendMessage(inputValue)
+      console.log('Received result from geminiService:', result);
+      
+      if (result.success) {
+        const aiMessage = {
+          id: Date.now() + 1,
+          content: result.response,
+          type: 'ai',
+          timestamp: new Date().toLocaleTimeString()
+        }
+        console.log('Adding AI message to chat:', aiMessage);
+        setMessages(prev => [...prev, aiMessage])
+      } else {
+        const errorMessage = {
+          id: Date.now() + 1,
+          content: result.response || 'Sorry, I encountered an error. Please try again.',
+          type: 'ai',
+          isError: true,
+          timestamp: new Date().toLocaleTimeString()
+        }
+        console.log('Adding error message to chat:', errorMessage);
+        setMessages(prev => [...prev, errorMessage])
       }
-      setMessages(prev => [...prev, aiMessage])
     } catch (error) {
       console.error('Error sending message:', error)
       const errorMessage = {
@@ -196,9 +212,18 @@ function App() {
                 <button 
                   onClick={async () => {
                     console.log('Testing API connection...')
-                    const result = await geminiService.testConnection()
-                    console.log('API test result:', result)
-                    alert(result ? 'API connection successful!' : 'API connection failed. Check console for details.')
+                    try {
+                      const result = await geminiService.testConnection()
+                      console.log('API test result:', result)
+                      if (result) {
+                        alert('API connection successful! You can now send messages.')
+                      } else {
+                        alert('API connection failed. Check console for details.')
+                      }
+                    } catch (error) {
+                      console.error('Test connection error:', error)
+                      alert('API test failed: ' + error.message)
+                    }
                     setShowMobileMenu(false)
                   }}
                   className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700/30 rounded-lg transition-all duration-200"
@@ -274,8 +299,9 @@ function App() {
                       <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
                       <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
                       <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                      <span className="text-sm text-gray-400 ml-2">Gemini is thinking...</span>
+                      <span className="text-sm text-gray-400 ml-2">AI is thinking...</span>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">This may take a few seconds...</p>
                   </div>
                 </div>
               )}

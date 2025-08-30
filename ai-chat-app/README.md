@@ -58,6 +58,8 @@ A modern, beautiful AI chat application built with React, featuring Google's Gem
    ```env
    VITE_GEMINI_API_KEY=your_gemini_api_key_here
    ```
+   
+   **⚠️ Important**: Never commit your `.env` file to version control. It's already added to `.gitignore`.
 
 4. **Start the development server**
    ```bash
@@ -79,7 +81,9 @@ A modern, beautiful AI chat application built with React, featuring Google's Gem
 2. **API Key Security**
    - Never commit your API key to version control
    - Use environment variables for production
-   - The app includes a fallback key for demo purposes
+   - Keep your API key private and secure
+   - Rotate your API key regularly
+   - Monitor your API usage to avoid unexpected charges
 
 ## 🎯 Usage
 

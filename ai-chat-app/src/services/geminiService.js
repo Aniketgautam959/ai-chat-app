@@ -1,11 +1,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize the Gemini API with your API key
-const API_KEY = 'AIzaSyCs0ejq8MdThPkylxSXdvL4XRoOx9PKKKA';
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 // Validate API key format
-if (!API_KEY || API_KEY.length < 30) {
-  console.error('Invalid API key format');
+if (!API_KEY) {
+  console.error('❌ No API key found. Please create a .env file with VITE_GEMINI_API_KEY=your_api_key');
+  console.error('Get your API key from: https://makersuite.google.com/app/apikey');
+} else if (API_KEY.length < 30) {
+  console.error('❌ Invalid API key format. API key should be at least 30 characters long.');
 } else {
   console.log('✅ API key loaded successfully:', API_KEY.substring(0, 10) + '...');
 }
@@ -75,6 +78,10 @@ export const geminiService = {
     try {
       console.log('Sending message:', message);
       
+      if (!model) {
+        throw new Error('Model not initialized. Please check your API key configuration.');
+      }
+      
       // Use generateContent directly for better reliability
       const result = await model.generateContent(message);
       const response = await result.response;
@@ -103,14 +110,21 @@ export const geminiService = {
       // More specific error handling
       let errorMessage = 'I apologize, but I encountered an error processing your request. Please try again.';
       
-      if (error.message.includes('API_KEY') || error.message.includes('key')) {
+      if (error.message.includes('API_KEY') || error.message.includes('key') || error.message.includes('authentication')) {
         errorMessage = 'API key error. Please check your Gemini API configuration.';
-      } else if (error.message.includes('quota')) {
+      } else if (error.message.includes('quota') || error.message.includes('limit')) {
         errorMessage = 'API quota exceeded. Please try again later.';
-      } else if (error.message.includes('network')) {
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
         errorMessage = 'Network error. Please check your internet connection.';
-      } else if (error.message.includes('model')) {
+      } else if (error.message.includes('model') || error.message.includes('not initialized')) {
         errorMessage = 'Model error. Please try again.';
+      } else if (error.message.includes('safety')) {
+        errorMessage = 'Content blocked by safety filters. Please rephrase your question.';
+      }
+      
+      // If all else fails, provide a helpful fallback response
+      if (!errorMessage.includes('API key') && !errorMessage.includes('quota')) {
+        errorMessage = 'I apologize, but I\'m having trouble connecting to my services right now. Please try again in a moment, or check your internet connection.';
       }
       
       return {
