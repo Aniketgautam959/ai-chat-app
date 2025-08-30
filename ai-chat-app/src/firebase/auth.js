@@ -22,10 +22,13 @@ export const authService = {
         });
       }
       
+      // Sign out the user immediately after registration
+      await signOut(auth);
+      
       return {
         success: true,
         user: userCredential.user,
-        message: 'Account created successfully!'
+        message: 'Account created successfully! Please sign in to continue.'
       };
     } catch (error) {
       return {

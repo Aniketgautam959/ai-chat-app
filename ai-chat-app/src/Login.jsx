@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Eye, EyeOff, Mail, Lock, Sparkles, ArrowRight } from 'lucide-react'
 import authService from './firebase/auth'
 
-function Login({ onLogin, onShowRegister }) {
+function Login({ onShowRegister }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -24,11 +24,8 @@ function Login({ onLogin, onShowRegister }) {
       const result = await authService.signIn(email, password)
       
       if (result.success) {
-        onLogin({
-          email: result.user.email,
-          name: result.user.displayName || result.user.email.split('@')[0],
-          uid: result.user.uid
-        })
+        // Login successful - Firebase auth state change will handle the rest
+        console.log('Login successful!')
       } else {
         setError(result.message)
       }
@@ -47,11 +44,8 @@ function Login({ onLogin, onShowRegister }) {
       const result = await authService.signInWithGoogle()
       
       if (result.success) {
-        onLogin({
-          email: result.user.email,
-          name: result.user.displayName || result.user.email.split('@')[0],
-          uid: result.user.uid
-        })
+        // Google sign-in successful - Firebase auth state change will handle the rest
+        console.log('Google sign-in successful!')
       } else {
         setError(result.message)
       }
