@@ -136,7 +136,7 @@
 }
 
 /* Responsive design improvements */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .grid-cols-5 {
     grid-template-columns: 1fr;
   }
@@ -147,6 +147,51 @@
   
   .col-span-4 {
     grid-column: span 1;
+  }
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  .glass {
+    backdrop-filter: blur(5px);
+  }
+  
+  .gradient-text {
+    font-size: 1.5rem;
+  }
+  
+  .message-enter {
+    animation-duration: 0.2s;
+  }
+  
+  .btn-animate:hover {
+    transform: none;
+  }
+  
+  .hover-lift:hover {
+    transform: none;
+  }
+}
+
+/* Tablet improvements */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .glass {
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .btn-animate:hover {
+    transform: none;
+  }
+  
+  .hover-lift:hover {
+    transform: none;
+  }
+  
+  .btn-animate:active {
+    transform: scale(0.95);
   }
 }
 

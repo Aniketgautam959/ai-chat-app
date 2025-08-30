@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Send, Sparkles, MessageSquare, User, LogOut } from 'lucide-react'
+import { Trash2, Send, Sparkles, MessageSquare, User, LogOut, Menu, X } from 'lucide-react'
 import Login from './Login'
 import Register from './Register'
 import geminiService from './services/geminiService'
+import authService from './firebase/auth'
 import './App.css'
 
 function App() {
   const [user, setUser] = useState(null)
   const [showRegister, setShowRegister] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [chatSession, setChatSession] = useState(null)
@@ -35,6 +37,42 @@ function App() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Listen to Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = authService.onAuthStateChange((firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in
+        setUser({
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+          uid: firebaseUser.uid
+        })
+      } else {
+        // User is signed out
+        setUser(null)
+        setShowRegister(false)
+        setChatSession(null)
+        geminiService.clearChatHistory()
+        setMessages([
+          {
+            id: 1,
+            type: 'ai',
+            content: 'Hello! I\'m your AI assistant powered by Google Gemini. How can I help you today?',
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ])
+        setRecentSearches([
+          'How to build a React app?',
+          'Explain machine learning basics',
+          'What is TypeScript?',
+          'Best practices for API design'
+        ])
+      }
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   // Initialize chat session when user logs in
   useEffect(() => {
@@ -71,32 +109,13 @@ function App() {
     setShowRegister(false)
   }
 
-  const handleLogout = () => {
-    setUser(null)
-    setShowRegister(false)
-    setShowSettings(false)
-    setChatSession(null)
-    geminiService.clearChatHistory()
-    setMessages([
-      {
-        id: 1,
-        type: 'ai',
-        content: 'Hello! I\'m your AI assistant powered by Google Gemini. How can I help you today?',
-        timestamp: new Date().toLocaleTimeString()
-      }
-    ])
-    setRecentSearches([
-      'How to build a React app?',
-      'Explain machine learning basics',
-      'What is TypeScript?',
-      'Best practices for API design'
-    ])
-  }
-
-  const handleSaveSettings = (newSettings) => {
-    console.log('Settings saved:', newSettings)
-    // Here you would typically save settings to localStorage or backend
-    // For now, we'll just log them
+  const handleLogout = async () => {
+    try {
+      await authService.signOut()
+      // The auth state change listener will handle the rest
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   const handleSendMessage = async () => {
@@ -215,12 +234,19 @@ function App() {
     return <Login onLogin={handleLogin} onShowRegister={() => setShowRegister(true)} />
   }
 
-  return (
+    return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
-        <div className="grid grid-cols-5 h-screen">
-        {/* Left Sidebar */}
-        <div className="col-span-1 glass border-r border-gray-700/50 p-6">
+        {/* Mobile menu overlay */}
+        {showMobileMenu && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/50 z-30"
+            onClick={() => setShowMobileMenu(false)}
+          />
+        )}
+        <div className="grid grid-cols-1 lg:grid-cols-5 h-screen">
+          {/* Left Sidebar */}
+          <div className={`${showMobileMenu ? 'block' : 'hidden'} lg:block lg:col-span-1 glass border-r border-gray-700/50 p-4 lg:p-6 absolute lg:relative inset-0 z-40 lg:z-auto`}>
           <div className="flex items-center gap-3 mb-8 hover-lift">
             <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
@@ -247,7 +273,10 @@ function App() {
                 <div
                   key={index}
                   className="p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-all duration-200 cursor-pointer group hover-lift"
-                  onClick={() => handleRecentSearchClick(search)}
+                  onClick={() => {
+                    handleRecentSearchClick(search)
+                    setShowMobileMenu(false)
+                  }}
                 >
                   <p className="text-sm text-gray-300 group-hover:text-white transition-colors line-clamp-2">
                     {search}
@@ -258,7 +287,10 @@ function App() {
 
             <div className="pt-6 border-t border-gray-700/50 space-y-2">
               <button 
-                onClick={clearChatHistory}
+                onClick={() => {
+                  clearChatHistory()
+                  setShowMobileMenu(false)
+                }}
                 className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700/30 rounded-lg transition-all duration-200"
               >
                 <Trash2 className="w-4 h-4" />
@@ -270,58 +302,61 @@ function App() {
                   const result = await geminiService.testConnection()
                   console.log('API test result:', result)
                   alert(result ? 'API connection successful!' : 'API connection failed. Check console for details.')
+                  setShowMobileMenu(false)
                 }}
                 className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700/30 rounded-lg transition-all duration-200"
               >
                 <Sparkles className="w-4 h-4" />
                 <span className="text-sm">Test API</span>
               </button>
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700/30 rounded-lg transition-all duration-200"
-              >
-                <Settings className="w-4 h-4" />
-                <span className="text-sm">Settings</span>
-              </button>
+
             </div>
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="col-span-4 flex flex-col">
-          {/* Header */}
-          <div className="p-6 border-b border-gray-700/50">
+                  {/* Main Content Area */}
+          <div className="col-span-1 lg:col-span-4 flex flex-col">
+                    {/* Header */}
+          <div className="p-4 lg:p-6 border-b border-gray-700/50">
             <div className="flex items-center justify-between">
-                                      <div>
-              <h1 className="text-2xl font-bold gradient-text">
-                Hello {user.name}, Ask me Anything
-              </h1>
-              <p className="text-gray-400 mt-1">Your AI assistant is ready to help</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+              <div className="flex items-center gap-3 lg:gap-4">
+                <button
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className="lg:hidden p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                >
+                  {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-lg lg:text-2xl font-bold gradient-text truncate">
+                    Hello {user.name}, Ask me Anything
+                  </h1>
+                  <p className="text-gray-400 mt-1 text-sm lg:text-base">Your AI assistant is ready to help</p>
+                </div>
               </div>
-              <button
-                onClick={handleLogout}
-                className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
+              <div className="flex items-center gap-2 lg:gap-3 ml-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Chat Messages */}
-          <div className="flex-1 p-6 overflow-y-auto space-y-4">
+          <div className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-4">
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} message-enter`}
               >
                 <div
-                  className={`max-w-[70%] p-4 rounded-2xl hover-lift ${
+                  className={`max-w-[85%] lg:max-w-[70%] p-3 lg:p-4 rounded-2xl hover-lift ${
                     message.type === 'user'
                       ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                       : message.isError
@@ -329,7 +364,7 @@ function App() {
                       : 'glass text-gray-100'
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
+                  <p className="text-sm lg:text-base">{message.content}</p>
                   <p className="text-xs opacity-70 mt-2">{message.timestamp}</p>
                 </div>
               </div>
@@ -338,7 +373,7 @@ function App() {
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex justify-start message-enter">
-                <div className="max-w-[70%] p-4 rounded-2xl glass text-gray-100">
+                <div className="max-w-[85%] lg:max-w-[70%] p-3 lg:p-4 rounded-2xl glass text-gray-100">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
                     <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
@@ -354,18 +389,18 @@ function App() {
           </div>
 
           {/* Input Area */}
-          <div className="p-6 border-t border-gray-700/50">
-            <div className="flex items-end gap-4 max-w-4xl mx-auto">
+          <div className="p-4 lg:p-6 border-t border-gray-700/50">
+            <div className="flex items-end gap-3 lg:gap-4 max-w-4xl mx-auto">
               <div className="flex-1 relative">
-                <textarea
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Ask me anything..."
-                  className="w-full p-4 pr-12 glass border border-gray-600/50 rounded-2xl text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus"
-                  rows="1"
-                  style={{ minHeight: '56px', maxHeight: '120px' }}
-                />
+                                  <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask me anything..."
+                    className="w-full p-3 lg:p-4 pr-12 glass border border-gray-600/50 rounded-2xl text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-sm lg:text-base"
+                    rows="1"
+                    style={{ minHeight: '48px', maxHeight: '120px' }}
+                  />
                 <div className="absolute right-3 bottom-3">
                   <MessageSquare className="w-5 h-5 text-gray-400" />
                 </div>
@@ -377,13 +412,13 @@ function App() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim()}
-                className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-2xl transition-all duration-200 btn-animate"
-              >
-                <Send className="w-5 h-5 text-white" />
-              </button>
+                              <button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim()}
+                  className="p-3 lg:p-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-2xl transition-all duration-200 btn-animate"
+                >
+                  <Send className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
+                </button>
             </div>
             <p className="text-xs text-gray-500 text-center mt-3">
               Press Enter to send, Shift + Enter for new line
@@ -393,12 +428,6 @@ function App() {
       </div>
     </div>
 
-      {/* Settings Modal */}
-      <Settings 
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        onSave={handleSaveSettings}
-      />
     </>
   )
 }
