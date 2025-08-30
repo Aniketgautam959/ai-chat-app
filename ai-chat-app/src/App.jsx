@@ -1,19 +1,405 @@
-import { useState } from 'react'
-
+import { useState, useRef, useEffect } from 'react'
+import { Trash2, Send, Sparkles, MessageSquare, User, LogOut } from 'lucide-react'
+import Login from './Login'
+import Register from './Register'
+import geminiService from './services/geminiService'
 import './App.css'
 
 function App() {
-  
+  const [user, setUser] = useState(null)
+  const [showRegister, setShowRegister] = useState(false)
+  const [inputValue, setInputValue] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [chatSession, setChatSession] = useState(null)
+  const [recentSearches, setRecentSearches] = useState([
+    'How to build a React app?',
+    'Explain machine learning basics',
+    'What is TypeScript?',
+    'Best practices for API design'
+  ])
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      type: 'ai',
+      content: 'Hello! I\'m your AI assistant powered by Google Gemini. How can I help you today?',
+      timestamp: new Date().toLocaleTimeString()
+    }
+  ])
+
+  const messagesEndRef = useRef(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  // Initialize chat session when user logs in
+  useEffect(() => {
+    if (user && !chatSession) {
+      initializeChat()
+    }
+  }, [user])
+
+  const initializeChat = async () => {
+    try {
+      console.log('Initializing chat session...')
+      const chat = await geminiService.startChat()
+      setChatSession(chat)
+      console.log('Chat session initialized successfully')
+      
+      // Test the API connection
+      const isConnected = await geminiService.testConnection()
+      if (isConnected) {
+        console.log('🎉 Gemini API is working perfectly!')
+      } else {
+        console.error('API connection test failed')
+      }
+    } catch (error) {
+      console.error('Failed to initialize chat:', error)
+    }
+  }
+
+  const handleLogin = (userData) => {
+    setUser(userData)
+  }
+
+  const handleRegister = (userData) => {
+    setUser(userData)
+    setShowRegister(false)
+  }
+
+  const handleLogout = () => {
+    setUser(null)
+    setShowRegister(false)
+    setShowSettings(false)
+    setChatSession(null)
+    geminiService.clearChatHistory()
+    setMessages([
+      {
+        id: 1,
+        type: 'ai',
+        content: 'Hello! I\'m your AI assistant powered by Google Gemini. How can I help you today?',
+        timestamp: new Date().toLocaleTimeString()
+      }
+    ])
+    setRecentSearches([
+      'How to build a React app?',
+      'Explain machine learning basics',
+      'What is TypeScript?',
+      'Best practices for API design'
+    ])
+  }
+
+  const handleSaveSettings = (newSettings) => {
+    console.log('Settings saved:', newSettings)
+    // Here you would typically save settings to localStorage or backend
+    // For now, we'll just log them
+  }
+
+  const handleSendMessage = async () => {
+    if (inputValue.trim()) {
+      const newMessage = {
+        id: messages.length + 1,
+        type: 'user',
+        content: inputValue,
+        timestamp: new Date().toLocaleTimeString()
+      }
+      
+      setMessages([...messages, newMessage])
+      setIsLoading(true)
+      
+      // Add to recent searches if not already there
+      if (!recentSearches.includes(inputValue)) {
+        setRecentSearches([inputValue, ...recentSearches.slice(0, 4)])
+      }
+      
+      const userMessage = inputValue
+      setInputValue('')
+      
+      try {
+        // Send message to Gemini API
+        const result = await geminiService.sendMessage(userMessage, chatSession)
+        
+        if (result.success) {
+          const aiResponse = {
+            id: messages.length + 2,
+            type: 'ai',
+            content: result.response,
+            timestamp: new Date().toLocaleTimeString()
+          }
+          setMessages(prev => [...prev, aiResponse])
+          
+          // Update chat session if provided
+          if (result.chat) {
+            setChatSession(result.chat)
+          }
+        } else {
+          // Try fallback method if chat fails
+          console.log('Chat failed, trying fallback method...')
+          const fallbackResult = await geminiService.generateResponse(userMessage)
+          
+          if (fallbackResult.success) {
+            const aiResponse = {
+              id: messages.length + 2,
+              type: 'ai',
+              content: fallbackResult.response,
+              timestamp: new Date().toLocaleTimeString()
+            }
+            setMessages(prev => [...prev, aiResponse])
+          } else {
+            // Handle error response
+            const errorResponse = {
+              id: messages.length + 2,
+              type: 'ai',
+              content: result.response,
+              timestamp: new Date().toLocaleTimeString(),
+              isError: true
+            }
+            setMessages(prev => [...prev, errorResponse])
+          }
+        }
+      } catch (error) {
+        console.error('Error sending message:', error)
+        const errorResponse = {
+          id: messages.length + 2,
+          type: 'ai',
+          content: 'I apologize, but I encountered an error. Please try again.',
+          timestamp: new Date().toLocaleTimeString(),
+          isError: true
+        }
+        setMessages(prev => [...prev, errorResponse])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+  }
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
+  const handleRecentSearchClick = (search) => {
+    setInputValue(search)
+  }
+
+  const clearRecentSearches = () => {
+    setRecentSearches([])
+  }
+
+  const clearChatHistory = () => {
+    setMessages([
+      {
+        id: 1,
+        type: 'ai',
+        content: 'Hello! I\'m your AI assistant powered by Google Gemini. How can I help you today?',
+        timestamp: new Date().toLocaleTimeString()
+      }
+    ])
+    geminiService.clearChatHistory()
+    if (chatSession) {
+      initializeChat()
+    }
+  }
+
+  // Show login or register page if user is not authenticated
+  if (!user) {
+    if (showRegister) {
+      return <Register onRegister={handleRegister} onBackToLogin={() => setShowRegister(false)} />
+    }
+    return <Login onLogin={handleLogin} onShowRegister={() => setShowRegister(true)} />
+  }
 
   return (
-   <div className='grid grid-cols-5'>
-    <div className='col-span-1'>
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+        <div className="grid grid-cols-5 h-screen">
+        {/* Left Sidebar */}
+        <div className="col-span-1 glass border-r border-gray-700/50 p-6">
+          <div className="flex items-center gap-3 mb-8 hover-lift">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold gradient-text">
+              AI Chat
+            </h1>
+          </div>
 
-    </div>
-    <div className='col-span-4'>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-300">Recent Searches</h2>
+              <button
+                onClick={clearRecentSearches}
+                className="p-1 hover:bg-gray-700/50 rounded-md transition-colors"
+                title="Clear all searches"
+              >
+                <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-400" />
+              </button>
+            </div>
 
+            <div className="space-y-3">
+              {recentSearches.map((search, index) => (
+                <div
+                  key={index}
+                  className="p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-all duration-200 cursor-pointer group hover-lift"
+                  onClick={() => handleRecentSearchClick(search)}
+                >
+                  <p className="text-sm text-gray-300 group-hover:text-white transition-colors line-clamp-2">
+                    {search}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-6 border-t border-gray-700/50 space-y-2">
+              <button 
+                onClick={clearChatHistory}
+                className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700/30 rounded-lg transition-all duration-200"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="text-sm">Clear Chat</span>
+              </button>
+              <button 
+                onClick={async () => {
+                  console.log('Testing API connection...')
+                  const result = await geminiService.testConnection()
+                  console.log('API test result:', result)
+                  alert(result ? 'API connection successful!' : 'API connection failed. Check console for details.')
+                }}
+                className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700/30 rounded-lg transition-all duration-200"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm">Test API</span>
+              </button>
+              <button 
+                onClick={() => setShowSettings(true)}
+                className="flex items-center gap-3 w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700/30 rounded-lg transition-all duration-200"
+              >
+                <Settings className="w-4 h-4" />
+                <span className="text-sm">Settings</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="col-span-4 flex flex-col">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-700/50">
+            <div className="flex items-center justify-between">
+                                      <div>
+              <h1 className="text-2xl font-bold gradient-text">
+                Hello {user.name}, Ask me Anything
+              </h1>
+              <p className="text-gray-400 mt-1">Your AI assistant is ready to help</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+            </div>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 p-6 overflow-y-auto space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} message-enter`}
+              >
+                <div
+                  className={`max-w-[70%] p-4 rounded-2xl hover-lift ${
+                    message.type === 'user'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                      : message.isError
+                      ? 'bg-red-500/20 border border-red-500/30 text-red-300'
+                      : 'glass text-gray-100'
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                  <p className="text-xs opacity-70 mt-2">{message.timestamp}</p>
+                </div>
+              </div>
+            ))}
+            
+            {/* Loading indicator */}
+            {isLoading && (
+              <div className="flex justify-start message-enter">
+                <div className="max-w-[70%] p-4 rounded-2xl glass text-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                    <span className="text-sm text-gray-400 ml-2">Gemini is thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Scroll to bottom reference */}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area */}
+          <div className="p-6 border-t border-gray-700/50">
+            <div className="flex items-end gap-4 max-w-4xl mx-auto">
+              <div className="flex-1 relative">
+                <textarea
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask me anything..."
+                  className="w-full p-4 pr-12 glass border border-gray-600/50 rounded-2xl text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus"
+                  rows="1"
+                  style={{ minHeight: '56px', maxHeight: '120px' }}
+                />
+                <div className="absolute right-3 bottom-3">
+                  <MessageSquare className="w-5 h-5 text-gray-400" />
+                </div>
+                {inputValue.length > 0 && (
+                  <div className="absolute right-3 top-3">
+                    <span className="text-xs text-gray-500">
+                      {inputValue.length}/4000
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim()}
+                className="p-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-2xl transition-all duration-200 btn-animate"
+              >
+                <Send className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 text-center mt-3">
+              Press Enter to send, Shift + Enter for new line
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
-   </div>
+
+      {/* Settings Modal */}
+      <Settings 
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onSave={handleSaveSettings}
+      />
+    </>
   )
 }
 
