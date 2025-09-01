@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Send, Sparkles, MessageSquare, User, LogOut, Menu, X } from 'lucide-react'
+import { Trash2, Send, Sparkles, MessageSquare, User, LogOut, Menu, X, Compass, Lightbulb, MessageCircle, Code } from 'lucide-react'
 import Login from './Login'
 import Register from './Register'
 import geminiService from './services/geminiService'
@@ -15,7 +15,36 @@ function App() {
   const [user, setUser] = useState(null)
   const [showRegister, setShowRegister] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(true)
   const messagesEndRef = useRef(null)
+
+  // Suggestion cards data
+  const suggestions = [
+    {
+      id: 1,
+      text: "Suggest beautiful places to see on an upcoming road trip",
+      icon: Compass,
+      category: "travel"
+    },
+    {
+      id: 2,
+      text: "Briefly summarize this concept: urban planning",
+      icon: Lightbulb,
+      category: "learning"
+    },
+    {
+      id: 3,
+      text: "Brainstorm team bonding activities for our work retreat",
+      icon: MessageCircle,
+      category: "business"
+    },
+    {
+      id: 4,
+      text: "Improve the readability of the following code",
+      icon: Code,
+      category: "coding"
+    }
+  ]
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -58,30 +87,33 @@ function App() {
         setIsLoading(false)
         setShowRegister(false)
         setShowMobileMenu(false)
+        setShowSuggestions(true)
       }
     })
 
     return () => unsubscribe()
   }, [])
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return
+  const handleSendMessage = async (message = null) => {
+    const messageToSend = message || inputValue
+    if (!messageToSend.trim() || isLoading) return
 
     const userMessage = {
       id: Date.now(),
-      content: inputValue,
+      content: messageToSend,
       type: 'user',
       timestamp: new Date().toLocaleTimeString()
     }
 
     setMessages(prev => [...prev, userMessage])
-    setRecentSearches(prev => [inputValue, ...prev.filter(s => s !== inputValue)].slice(0, 5))
+    setRecentSearches(prev => [messageToSend, ...prev.filter(s => s !== messageToSend)].slice(0, 5))
     setInputValue('')
     setIsLoading(true)
+    setShowSuggestions(false)
 
     try {
-      console.log('Calling geminiService.sendMessage with:', inputValue);
-      const result = await geminiService.sendMessage(inputValue)
+      console.log('Calling geminiService.sendMessage with:', messageToSend);
+      const result = await geminiService.sendMessage(messageToSend)
       console.log('Received result from geminiService:', result);
       
       if (result.success) {
@@ -119,6 +151,10 @@ function App() {
     }
   }
 
+  const handleSuggestionClick = (suggestion) => {
+    handleSendMessage(suggestion.text)
+  }
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -136,6 +172,7 @@ function App() {
 
   const clearChatHistory = () => {
     setMessages([])
+    setShowSuggestions(true)
     geminiService.clearChatHistory()
   }
 
@@ -157,7 +194,7 @@ function App() {
             onClick={() => setShowMobileMenu(false)}
           />
         )}
-        <div className="grid grid-cols-1 lg:grid-cols-5 h-screen">
+        <div className="grid grid-cols-1 lg:grid-cols-5 h-screen overflow-hidden">
           {/* Left Sidebar */}
           <div className={`${showMobileMenu ? 'block' : 'hidden'} lg:block lg:col-span-1 glass border-r border-gray-700/50 p-4 lg:p-6 absolute lg:relative inset-0 z-40 lg:z-auto`}>
             <div className="flex items-center gap-3 mb-8 hover-lift">
@@ -236,7 +273,7 @@ function App() {
           </div>
 
           {/* Main Content Area */}
-          <div className="col-span-1 lg:col-span-4 flex flex-col">
+          <div className="col-span-1 lg:col-span-4 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="p-4 lg:p-6 border-b border-gray-700/50">
               <div className="flex items-center justify-between">
@@ -270,11 +307,11 @@ function App() {
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-4">
+            <div className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-4 flex flex-col items-center min-h-0 max-h-full">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} message-enter`}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} message-enter w-full max-w-4xl`}
                 >
                   <div
                     className={`max-w-[85%] lg:max-w-[70%] p-3 lg:p-4 rounded-2xl hover-lift ${
@@ -293,7 +330,7 @@ function App() {
               
               {/* Loading indicator */}
               {isLoading && (
-                <div className="flex justify-start message-enter">
+                <div className="flex justify-start message-enter w-full max-w-4xl">
                   <div className="max-w-[85%] lg:max-w-[70%] p-3 lg:p-4 rounded-2xl glass text-gray-100">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
@@ -305,6 +342,40 @@ function App() {
                   </div>
                 </div>
               )}
+
+              {/* Suggestion Cards - Show only when no messages and not loading */}
+              {showSuggestions && messages.length === 0 && !isLoading && (
+                <div className="space-y-4 sm:space-y-6 flex flex-col items-center justify-center py-4 sm:py-8">
+                  <div className="text-center">
+                    <h2 className="text-xl lg:text-2xl font-bold gradient-text mb-2">
+                      How can I help you today?
+                    </h2>
+                    <p className="text-gray-400 text-sm lg:text-base">
+                      Choose a suggestion or type your own question
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 max-w-5xl mx-auto w-full px-2 sm:px-4">
+                    {suggestions.map((suggestion) => {
+                      const IconComponent = suggestion.icon
+                      return (
+                        <div
+                          key={suggestion.id}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className="suggestion-card relative p-3 sm:p-4 lg:p-6 bg-gray-700/30 rounded-xl hover:bg-gray-700/50 transition-all duration-300 cursor-pointer group hover-lift border border-gray-600/30 hover:border-purple-500/50"
+                        >
+                          <p className="text-sm lg:text-base text-gray-200 group-hover:text-white transition-colors mb-4 leading-relaxed">
+                            {suggestion.text}
+                          </p>
+                          <div className="absolute bottom-3 right-3">
+                            <IconComponent className="w-5 h-5 text-gray-400 group-hover:text-purple-400 transition-colors" />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
               
               {/* Scroll to bottom reference */}
               <div ref={messagesEndRef} />
@@ -312,39 +383,41 @@ function App() {
 
             {/* Input Area */}
             <div className="p-4 lg:p-6 border-t border-gray-700/50">
-              <div className="flex items-end gap-3 lg:gap-4 max-w-4xl mx-auto">
-                <div className="flex-1 relative">
-                  <textarea
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Ask me anything..."
-                    className="w-full p-3 lg:p-4 pr-12 glass border border-gray-600/50 rounded-2xl text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-sm lg:text-base"
-                    rows="1"
-                    style={{ minHeight: '48px', maxHeight: '120px' }}
-                  />
-                  <div className="absolute right-3 bottom-3">
-                    <MessageSquare className="w-5 h-5 text-gray-400" />
-                  </div>
-                  {inputValue.length > 0 && (
-                    <div className="absolute right-3 top-3">
-                      <span className="text-xs text-gray-500">
-                        {inputValue.length}/4000
-                      </span>
+              <div className="flex flex-col items-center justify-center max-w-3xl mx-auto">
+                <div className="flex items-end gap-2 sm:gap-3 lg:gap-4 w-full">
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ask me anything..."
+                      className="w-full p-3 lg:p-4 pr-12 glass border border-gray-600/50 rounded-2xl text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-base"
+                      rows="1"
+                      style={{ minHeight: '48px', maxHeight: '120px' }}
+                    />
+                    <div className="absolute right-3 bottom-3">
+                      <MessageSquare className="w-5 h-5 text-gray-400" />
                     </div>
-                  )}
+                    {inputValue.length > 0 && (
+                      <div className="absolute right-3 top-3">
+                        <span className="text-xs text-gray-500">
+                          {inputValue.length}/4000
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleSendMessage()}
+                    disabled={!inputValue.trim()}
+                    className="p-3 lg:p-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-2xl transition-all duration-200 btn-animate min-h-[44px]"
+                  >
+                    <Send className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
+                  </button>
                 </div>
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim()}
-                  className="p-3 lg:p-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-2xl transition-all duration-200 btn-animate"
-                >
-                  <Send className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
-                </button>
+                <p className="text-xs text-gray-500 text-center mt-3">
+                  Press Enter to send, Shift + Enter for new line
+                </p>
               </div>
-              <p className="text-xs text-gray-500 text-center mt-3">
-                Press Enter to send, Shift + Enter for new line
-              </p>
             </div>
           </div>
         </div>

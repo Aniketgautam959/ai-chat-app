@@ -107,8 +107,8 @@ function Register({ onBackToLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4">
-      <div className="w-full max-w-md mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-md mx-auto px-2 sm:px-0">
         {/* Logo and Title */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl mb-4 hover-lift">
@@ -123,7 +123,7 @@ function Register({ onBackToLogin }) {
         </div>
 
         {/* Registration Form */}
-        <div className="glass rounded-2xl p-6 lg:p-8 border border-gray-700/50 login-form">
+        <div className="glass rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-700/50 login-form">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Field */}
             <div className="form-field">
@@ -140,7 +140,7 @@ function Register({ onBackToLogin }) {
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700/30 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-sm lg:text-base"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/30 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-base"
                   placeholder="Enter your full name"
                   required
                 />
@@ -162,7 +162,7 @@ function Register({ onBackToLogin }) {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700/30 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-sm lg:text-base"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/30 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-base"
                   placeholder="Enter your email"
                   required
                 />
@@ -184,7 +184,7 @@ function Register({ onBackToLogin }) {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-700/30 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-sm lg:text-base"
+                  className="w-full pl-10 pr-12 py-3 bg-gray-700/30 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-base"
                   placeholder="Create a password"
                   required
                 />
@@ -217,7 +217,7 @@ function Register({ onBackToLogin }) {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-700/30 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-sm lg:text-base"
+                  className="w-full pl-10 pr-12 py-3 bg-gray-700/30 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 input-focus text-base"
                   placeholder="Confirm your password"
                   required
                 />
@@ -253,7 +253,7 @@ function Register({ onBackToLogin }) {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-all duration-200 btn-animate flex items-center justify-center gap-2 text-sm lg:text-base ${isLoading ? 'btn-loading' : ''}`}
+              className={`w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-white font-medium transition-all duration-200 btn-animate flex items-center justify-center gap-2 text-base ${isLoading ? 'btn-loading' : ''}`}
             >
               {isLoading ? (
                 <>
@@ -283,7 +283,7 @@ function Register({ onBackToLogin }) {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full py-3 bg-white hover:bg-gray-100 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-xl text-gray-800 font-medium transition-all duration-200 flex items-center justify-center gap-3 text-sm lg:text-base"
+              className="w-full py-3 bg-white hover:bg-gray-100 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-xl text-gray-800 font-medium transition-all duration-200 flex items-center justify-center gap-3 text-base"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

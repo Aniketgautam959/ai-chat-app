@@ -55,6 +55,22 @@
   animation: fadeInUp 0.3s ease-out;
 }
 
+/* Suggestion card animations */
+.suggestion-card {
+  animation: fadeInUp 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+.suggestion-card:nth-child(1) { animation-delay: 0.1s; }
+.suggestion-card:nth-child(2) { animation-delay: 0.2s; }
+.suggestion-card:nth-child(3) { animation-delay: 0.3s; }
+.suggestion-card:nth-child(4) { animation-delay: 0.4s; }
+
+.suggestion-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(139, 92, 246, 0.4);
+}
+
 /* Gradient text animation */
 .gradient-text {
   background: linear-gradient(-45deg, #8b5cf6, #ec4899, #3b82f6, #8b5cf6);
@@ -82,6 +98,26 @@
 
 .input-focus:focus {
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+/* Center alignment for main content */
+.main-content-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+}
+
+/* Input area centering */
+.input-area-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 /* Button animations */
@@ -171,6 +207,41 @@
   .hover-lift:hover {
     transform: none;
   }
+  
+  /* Fix mobile layout issues */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Ensure proper mobile spacing */
+  .p-4 {
+    padding: 1rem;
+  }
+  
+  /* Fix mobile input sizing */
+  input, textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  
+  /* Mobile-specific button sizing */
+  .btn-animate {
+    min-height: 44px; /* Touch target size */
+  }
+  
+  /* Fix mobile grid layout */
+  .grid {
+    display: grid;
+  }
+  
+  /* Ensure mobile sidebar works properly */
+  .lg\\:hidden {
+    display: none;
+  }
+  
+  .lg\\:block {
+    display: block;
+  }
 }
 
 /* Tablet improvements */
@@ -192,6 +263,121 @@
   
   .btn-animate:active {
     transform: scale(0.95);
+  }
+}
+
+/* Additional mobile fixes for Samsung Galaxy and other devices */
+@media screen and (max-width: 360px) {
+  /* Galaxy S8+ and similar small screens */
+  .p-4 {
+    padding: 0.75rem;
+  }
+  
+  .text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .text-lg {
+    font-size: 1.125rem;
+  }
+  
+  .text-xl {
+    font-size: 1.25rem;
+  }
+  
+  .text-2xl {
+    font-size: 1.5rem;
+  }
+  
+  .text-3xl {
+    font-size: 1.875rem;
+  }
+  
+  /* Fix suggestion cards for small screens */
+  .grid-cols-1 {
+    grid-template-columns: 1fr;
+  }
+  
+  .md\\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .lg\\:grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Ensure proper mobile height */
+  .h-screen {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+  
+  /* Fix mobile input area */
+  .flex-1 {
+    flex: 1 1 0%;
+  }
+  
+  /* Ensure mobile menu works */
+  .absolute {
+    position: absolute;
+  }
+  
+  .relative {
+    position: relative;
+  }
+  
+  .fixed {
+    position: fixed;
+  }
+  
+  .inset-0 {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+}
+
+/* Fix overflow issues */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.max-h-full {
+  max-height: 100%;
+}
+
+/* Ensure proper flex behavior */
+.flex-1 {
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+/* Fix suggestion cards container */
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+/* Mobile-specific overflow fixes */
+@media (max-width: 768px) {
+  .overflow-y-auto {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .min-h-0 {
+    min-height: 0;
+  }
+  
+  /* Prevent horizontal scroll on mobile */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Ensure proper container sizing */
+  .h-screen {
+    height: 100vh;
+    height: -webkit-fill-available;
   }
 }
 

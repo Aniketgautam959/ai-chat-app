@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+/* Global mobile fixes */
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+/* Ensure proper viewport handling */
+html {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Fix for mobile browsers */
+* {
+  box-sizing: border-box;
+}
