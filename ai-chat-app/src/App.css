@@ -100,6 +100,63 @@
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
+/* Formatted Gemini response styles */
+.formatted-response h2 {
+  color: #ffffff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  margin-top: 1rem;
+}
+
+.formatted-response h2:first-child {
+  margin-top: 0;
+}
+
+.formatted-response h3 {
+  color: #e5e7eb;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.formatted-response p {
+  color: #d1d5db;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.formatted-response ul {
+  margin-bottom: 0.75rem;
+}
+
+.formatted-response li {
+  color: #d1d5db;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.formatted-response li:last-child {
+  margin-bottom: 0;
+}
+
+/* Sub-bullet points */
+.formatted-response ul ul li {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin-left: 1rem;
+}
+
+/* Headings within bullet points */
+.formatted-response li span {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
 /* Center alignment for main content */
 .main-content-center {
   display: flex;

@@ -1,10 +1,70 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Send, Sparkles, MessageSquare, User, LogOut, Menu, X, Compass, Lightbulb, MessageCircle, Code } from 'lucide-react'
+import { Trash2, Send, Sparkles, MessageSquare, User, LogOut, Menu, X, Compass, Lightbulb, MessageCircle, Code, Copy, Check } from 'lucide-react'
 import Login from './Login'
 import Register from './Register'
 import geminiService from './services/geminiService'
 import authService from './firebase/auth'
 import './App.css'
+
+// Utility function to format Gemini response with headings and bullet points
+const formatGeminiResponse = (text) => {
+  if (!text) return '';
+  
+  // Split the text into lines
+  const lines = text.split('\n');
+  const formattedLines = [];
+  
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim();
+    
+    // Check for main headings (single asterisk)
+    if (trimmedLine.startsWith('* ') && trimmedLine.endsWith('*')) {
+      const headingText = trimmedLine.slice(2, -1); // Remove * and *
+      formattedLines.push(`<h2 class="text-lg font-bold text-white mb-3 mt-4 first:mt-0">${headingText}</h2>`);
+    }
+    // Check for sub-headings (double asterisk)
+    else if (trimmedLine.startsWith('** ') && trimmedLine.endsWith('**')) {
+      const headingText = trimmedLine.slice(3, -2); // Remove ** and **
+      formattedLines.push(`<h3 class="text-xl font-bold text-white mb-3 mt-4">${headingText}</h3>`);
+    }
+    // Check for bullet points (single asterisk at start)
+    else if (trimmedLine.startsWith('* ') && !trimmedLine.endsWith('*')) {
+      const bulletText = trimmedLine.slice(2); // Remove *
+      
+      // Check if the bullet point contains sub-headings (text wrapped in **)
+      const formattedBulletText = bulletText.replace(
+        /\*\*(.*?)\*\*/g,
+        '<span class="text-white font-bold text-base">$1</span>'
+      );
+      
+      formattedLines.push(`<li class="text-sm text-gray-300 mb-1 ml-4">${formattedBulletText}</li>`);
+    }
+    // Check for sub-bullet points (double asterisk at start)
+    else if (trimmedLine.startsWith('** ') && !trimmedLine.endsWith('**')) {
+      const bulletText = trimmedLine.slice(3); // Remove **
+      formattedLines.push(`<li class="text-xs text-gray-400 mb-1 ml-8">${bulletText}</li>`);
+    }
+    // Regular text
+    else if (trimmedLine) {
+      formattedLines.push(`<p class="text-sm text-gray-300 mb-2">${trimmedLine}</p>`);
+    }
+    // Empty lines
+    else {
+      formattedLines.push('<br>');
+    }
+  });
+  
+  // Wrap bullet points in ul tags
+  let formattedText = formattedLines.join('');
+  
+  // Replace consecutive li tags with ul wrapper
+  formattedText = formattedText.replace(
+    /(<li[^>]*>.*?<\/li>)+/g,
+    (match) => `<ul class="list-disc list-inside mb-3">${match}</ul>`
+  );
+  
+  return formattedText;
+};
 
 function App() {
   const [inputValue, setInputValue] = useState('')
@@ -16,6 +76,7 @@ function App() {
   const [showRegister, setShowRegister] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(true)
+  const [copiedMessages, setCopiedMessages] = useState(new Set())
   const messagesEndRef = useRef(null)
 
   // Suggestion cards data
@@ -180,6 +241,24 @@ function App() {
     authService.signOut()
   }
 
+  const copyToClipboard = async (text, messageId) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedMessages(prev => new Set([...prev, messageId]))
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedMessages(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(messageId)
+          return newSet
+        })
+      }, 2000)
+    } catch (err) {
+      console.error('Failed to copy text: ', err)
+    }
+  }
+
   if (!user) {
     return showRegister ? <Register onBackToLogin={() => setShowRegister(false)} /> : <Login onShowRegister={() => setShowRegister(true)} />
   }
@@ -314,7 +393,7 @@ function App() {
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} message-enter w-full max-w-4xl`}
                 >
                   <div
-                    className={`max-w-[85%] lg:max-w-[70%] p-3 lg:p-4 rounded-2xl hover-lift ${
+                    className={`max-w-[85%] lg:max-w-[70%] p-3 lg:p-4 rounded-2xl hover-lift group ${
                       message.type === 'user'
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                         : message.isError
@@ -322,7 +401,29 @@ function App() {
                         : 'glass text-gray-100'
                     }`}
                   >
-                    <p className="text-sm lg:text-base">{message.content}</p>
+                    {message.type === 'user' ? (
+                      <p className="text-sm lg:text-base">{message.content}</p>
+                    ) : (
+                      <div className="relative">
+                        <div 
+                          className="text-sm lg:text-base formatted-response"
+                          dangerouslySetInnerHTML={{ 
+                            __html: formatGeminiResponse(message.content) 
+                          }}
+                        />
+                        <button
+                          onClick={() => copyToClipboard(message.content, message.id)}
+                          className="absolute top-0 right-0 p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
+                          title="Copy response"
+                        >
+                          {copiedMessages.has(message.id) ? (
+                            <Check className="w-4 h-4 text-green-400" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    )}
                     <p className="text-xs opacity-70 mt-2">{message.timestamp}</p>
                   </div>
                 </div>
