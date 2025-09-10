@@ -42,21 +42,24 @@ The app features a sleek dark UI, authentication system, and smooth interactions
    cd ai-chat-app
 Install dependencies
 
-bash
+```bash
 Copy code
 npm install
 Set up environment variables
 Create a .env file in the project root and add:
-
+```
 env
 Copy code
+```bash
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
 VITE_FIREBASE_API_KEY=your_firebase_api_key_here
 Run the app
+```
 
-bash
+```bash
 Copy code
 npm run dev
+```
 📂 Project Structure
 csharp
 Copy code
