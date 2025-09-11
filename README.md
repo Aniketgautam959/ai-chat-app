@@ -61,7 +61,8 @@ Copy code
 npm run dev
 ```
 📂 Project Structure
-csharp
+
+```bash
 Copy code
 ai-chat-app/
 │── public/            # Static assets
@@ -74,3 +75,4 @@ ai-chat-app/
 │   └── main.jsx       # Entry point
 │── package.json
 │── README.md
+```
